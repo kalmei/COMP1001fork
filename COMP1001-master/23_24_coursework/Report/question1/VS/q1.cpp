@@ -28,8 +28,10 @@
 void initialize();
 void routine1(float alpha, float beta);
 void routine2(float alpha, float beta);
+void routine1_vec(float alpha, float beta);
+void routine2_vec(float alpha, float beta);
 
-__declspec(align(64)) float  y[M], z[M] ;
+__declspec(align(64)) float  y[M], z[M];
 __declspec(align(64)) float A[N][N], x[N], w[N];
 
 int main() {
@@ -44,8 +46,8 @@ int main() {
     start_time = omp_get_wtime(); //start timer
 
     for (t = 0; t < TIMES1; t++)
-        routine1(alpha, beta);
-        //routine1_vec(alpha, beta);
+        //routine1(alpha, beta);
+        routine1_vec(alpha, beta);
 
     run_time = omp_get_wtime() - start_time; //end timer
     printf("\n Time elapsed is %f secs \n %e FLOPs achieved\n", run_time, (double)(ARITHMETIC_OPERATIONS1) / ((double)run_time / TIMES1));
@@ -54,8 +56,8 @@ int main() {
     start_time = omp_get_wtime(); //start timer
 
     for (t = 0; t < TIMES2; t++)
-        routine2(alpha, beta);
-        //routine2_vec(alpha, beta);
+        //routine2(alpha, beta);
+        routine2_vec(alpha, beta);
     run_time = omp_get_wtime() - start_time; //end timer
     printf("\n Time elapsed is %f secs \n %e FLOPs achieved\n", run_time, (double)(ARITHMETIC_OPERATIONS2) / ((double)run_time / TIMES2));
 
@@ -114,13 +116,13 @@ void routine2(float alpha, float beta) {
 
 }
 
-routine1_vec(float alpha, float beta) {
+void routine1_vec(float alpha, float beta) {
     unsigned int i = 0;
-    __m128 num1, num2, num3, num4,num5,num6,num7;
+    __m128 num1, num2, num3, num4, num5, num6, num7;
     num3 = _mm_setzero_ps();
     num6 = _mm_loadu_ps(&alpha);
     num7 = _mm_loadu_ps(&beta);
-    for (i = 0; i < (M/4)*4; i+=4) {
+    for (i = 0; i < (M / 4) * 4; i += 4) {
         num1 = _mm_loadu_ps(&(y[i]));
         num2 = _mm_loadu_ps(&(z[i]));
         num3 = _mm_mul_ps(num1, num6);
@@ -128,31 +130,31 @@ routine1_vec(float alpha, float beta) {
         num5 = _mm_add_ps(num3, num4);
         _mm_storeu_ps(&y[i], num5);
     }
-    for ( ; i < M; i++) {
-    y[i] = alpha*y[i] + beta*z[i];
+    for (; i < M; i++) {
+        y[i] = alpha * y[i] + beta * z[i];
     }
 }
 
-routine2_vec(float alpha, float beta) {
-    unsigned int i = 0; 
+void routine2_vec(float alpha, float beta) {
+    unsigned int i = 0;
     unsigned int j = 0;
-    __m256 num1, num2, num3 ,num4, num5, num6, num7, num8, num9;
+    __m256 num1, num2, num3, num4, num5, num6, num7, num8, num9;
     num4 = _mm256_setzero_ps();
-    num8 = _mm256_loadu_ps(&alpha);
-    num9 = _mm256_loadu_ps(&beta);
-    for (i =0 ; i < N; i++) {
-    for ( j= 0; j < (N/8)*8; j +=8) {
-    num1 = _mm256_loadu_ps(&w[i]);
-    num2 = _mm256_loadu_ps(&A[i][j]);
-    num3 = _mm256_loadu_ps(&x[j]);
-    num4 = _mm256_sub_ps(num1, num9);
-    num5 = _mm256_mul_ps(num2, num3);
-    num6 = _mm256_mul_ps(num5, num8);
-    num7 = _mm256_add_ps(num4,num6);
-    _mm256_storeu_ps(&(w[i]), num7);
-    }
-    for ( ; j < N; j++) {
-    w[i] = w[i]*beta - alpha*A[i][j]*x[j];
-    }
+    num8 = _mm256_loadu_ps(&(alpha));
+    num9 = _mm256_loadu_ps(&(beta));
+    for (i = 0; i < N; i++) {
+        for (j = 0; j < ((N / 8) * 8); j += 8) {
+            num1 = _mm256_loadu_ps(&w[i]);
+            num2 = _mm256_loadu_ps(&A[i][j]);
+            num3 = _mm256_loadu_ps(&x[j]);
+            num4 = _mm256_sub_ps(num1, num9);
+            num5 = _mm256_mul_ps(num2, num3);
+            num6 = _mm256_mul_ps(num5, num8);
+            num7 = _mm256_add_ps(num4, num6);
+            _mm256_storeu_ps(&(w[i]), num7);
+        }
+        for (; j < N; j++) {
+            w[i] = w[i] * beta - alpha * A[i][j] * x[j];
+        }
     }
 }
