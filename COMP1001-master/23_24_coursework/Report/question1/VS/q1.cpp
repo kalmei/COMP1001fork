@@ -125,5 +125,9 @@ routine1_vec(float alpha, float beta) {
         num4 = _mm_mul_ps(num2, beta);
         num 5 = _mm_add_ps(num3, num4);
         _mm_storeu_ps(&y[i]);
-
+    }
+    for ( ; i < M; i++) {
+    y[i] = alpha*y[i] + beta*z[i];
+    }
+}
 
