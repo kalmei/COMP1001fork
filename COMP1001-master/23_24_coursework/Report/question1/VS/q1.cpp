@@ -45,6 +45,7 @@ int main() {
 
     for (t = 0; t < TIMES1; t++)
         routine1(alpha, beta);
+        //routine1_vec(alpha, beta);
 
     run_time = omp_get_wtime() - start_time; //end timer
     printf("\n Time elapsed is %f secs \n %e FLOPs achieved\n", run_time, (double)(ARITHMETIC_OPERATIONS1) / ((double)run_time / TIMES1));
@@ -54,7 +55,7 @@ int main() {
 
     for (t = 0; t < TIMES2; t++)
         routine2(alpha, beta);
-
+        //routine2_vec(alpha, beta);
     run_time = omp_get_wtime() - start_time; //end timer
     printf("\n Time elapsed is %f secs \n %e FLOPs achieved\n", run_time, (double)(ARITHMETIC_OPERATIONS2) / ((double)run_time / TIMES2));
 
@@ -123,11 +124,32 @@ routine1_vec(float alpha, float beta) {
         num2 = _mm_loadu_ps(&(z[i]));
         num3 = _mm_mul_ps(num1, alpha);
         num4 = _mm_mul_ps(num2, beta);
-        num 5 = _mm_add_ps(num3, num4);
-        _mm_storeu_ps(&y[i]);
+        num5 = _mm_add_ps(num3, num4);
+        _mm_storeu_ps(&y[i], num5);
     }
     for ( ; i < M; i++) {
     y[i] = alpha*y[i] + beta*z[i];
     }
 }
 
+routine2_vec(float alpha, float beta) {
+    unsigned int i = 0; 
+    unsigned int j = 0;
+    __m256 num1, num2, num3 ,num4, num5, num6, num7;
+    num4 = _mm256_setzero_ps();
+    for (i =0 ; i < N; i++) {
+    for ( j= 0; j < (N/8)*8; N +=8) {
+    num1 = _mm256_loadu_ps(&w[i]);
+    num2 = _mm256_loadu_ps(&A[i][j]);
+    num3 = _mm256_loadu_ps(&x[j]);
+    num4 = _mm256_sub_ps(num1, beta);
+    num5 = _mm256_mul_ps(num2, num3);
+    num6 = _mm256_mul_ps(num5, alpha);
+    num7 = _mm256_add_ps(num4,num6);
+    _mm256_storeu_ps(&(w[i]), num7);
+    }
+    for ( ; j < N; j++) {
+    w[i] = w[i]*beta - alpha*A[i][j]*x[j];
+    }
+    }
+}
